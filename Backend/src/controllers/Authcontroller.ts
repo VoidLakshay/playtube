@@ -14,8 +14,7 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateTokens.js";
-import sendVerificationEmail
-from "../utils/sendVerificationEmail.js";
+import sendVerificationEmail from "../utils/sendVerificationEmail.js";
 // ---------------- SIGNUP ----------------
 
 export const signup = async (req: Request, res: Response) => {
@@ -80,12 +79,11 @@ export const signup = async (req: Request, res: Response) => {
     });
     // SEND VERIFICATION EMAIL
 
-await sendVerificationEmail(
+    await sendVerificationEmail(
+      user.id,
 
-  user.id,
-
-  user.email
-);
+      user.email,
+    );
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,

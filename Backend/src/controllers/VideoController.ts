@@ -1,10 +1,11 @@
+import path from "path";
 import type { Request, Response } from "express";
-
 import prisma from "../lib/prisma.js";
-
 import uploadOnCloudinary from "../config/cloudinary.js";
 
 import type { AuthRequest } from "../middleware/isAuth.js";
+
+import { sendVideoJob } from "../queue/producer.js";
 
 // ======================================================
 // UPLOAD VIDEO / SHORT
@@ -55,7 +56,9 @@ export const uploadVideo = async (req: AuthRequest, res: Response) => {
         message: "Video required",
       });
     }
+    console.log("video path:", files.video[0].path);
 
+   
     // ======================================================
     // THUMBNAIL VALIDATION
     // ======================================================
@@ -67,44 +70,51 @@ export const uploadVideo = async (req: AuthRequest, res: Response) => {
     }
 
     // ======================================================
-    // UPLOAD VIDEO
-    // ======================================================
-
-    const uploadedVideo = await uploadOnCloudinary(files.video[0].path);
-
-    // ======================================================
-    // UPLOAD THUMBNAIL
+    // UPLOAD THUMBNAIL ONLY FIRST (since we need the video file for transcoding)
     // ======================================================
 
     const uploadedThumbnail = await uploadOnCloudinary(files.thumbnail[0].path);
 
-    if (!uploadedVideo || !uploadedThumbnail) {
+    if (!uploadedThumbnail) {
       return res.status(500).json({
-        message: "Upload failed",
+        message: "Thumbnail upload failed",
       });
     }
 
     // ======================================================
     // CREATE VIDEO
     // ======================================================
-
+      
     const video = await prisma.video.create({
-      data: {
-        title,
+  data: {
+    title,
+    description,
+    videoUrl: null, // we'll set this after cloudinary upload from worker
+    thumbnailUrl: uploadedThumbnail,
+   duration: 0,
+hlsUrl: null,
+transcodingStatus: "processing",
+    isShort: isShort === "true",
+    aspectRatio: isShort === "true" ? "9:16" : "16:9",
+    channelId: channel.id,
+  },
+});
 
-        description,
 
-        videoUrl: uploadedVideo,
+const absoluteVideoPath =
+  path.resolve(
+    files.video[0].path,
+  );
 
-        thumbnailUrl: uploadedThumbnail,
+await sendVideoJob({
+  videoId: video.id,
+  videoPath: absoluteVideoPath,
+});
 
-        isShort: isShort === "true",
-
-        aspectRatio: isShort === "true" ? "9:16" : "16:9",
-
-        channelId: channel.id,
-      },
-    });
+console.log(
+  "VIDEO JOB SENT:",
+  video.id,
+);
 
     // ======================================================
     // INCREMENT VIDEO COUNT

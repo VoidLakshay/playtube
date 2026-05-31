@@ -63,35 +63,43 @@ const fileFilter = (
   cb: FileFilterCallback
 ) => {
 
-  const allowedMimeTypes = [
+  if (file.fieldname === "video") {
 
-    "video/mp4",
+    const allowedVideos = [
+      "video/mp4",
+      "video/webm",
+      "video/x-matroska",
+    ];
 
-    "video/webm",
+    if (allowedVideos.includes(file.mimetype)) {
+      return cb(null, true);
+    }
 
-    "video/mkv",
-  ];
-
-
-
-  if (
-    allowedMimeTypes.includes(
-      file.mimetype
-    )
-  ) {
-
-    cb(null, true);
-
-  } else {
-
-    cb(
-      new Error(
-        "Only video files are allowed"
-      )
+    return cb(
+      new Error("Only video files are allowed")
     );
   }
-};
 
+  if (file.fieldname === "thumbnail") {
+
+    const allowedImages = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
+
+    if (allowedImages.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+
+    return cb(
+      new Error("Only image files are allowed")
+    );
+  }
+
+  cb(null, false);
+};
 
 
 

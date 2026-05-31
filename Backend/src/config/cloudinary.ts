@@ -2,6 +2,11 @@ import { v2 as cloudinary } from "cloudinary";
 
 import fs from "fs";
 
+
+console.log("CLOUD_NAME =", process.env.CLOUD_NAME);
+console.log("CLOUD_API_KEY =", process.env.CLOUD_API_KEY);
+console.log("CLOUD_API_SECRET =", process.env.CLOUD_API_SECRET ? "FOUND" : "MISSING");
+
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME!,
 
@@ -10,7 +15,7 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET!,
 });
 
-const uploadOnCloudinary = async (filePath: string): Promise<string | null> => {
+const uploadOnCloudinary = async (filePath: string, deleteAfterUpload: boolean = true): Promise<string | null> => {
   try {
     if (!filePath) {
       return null;
@@ -26,15 +31,16 @@ const uploadOnCloudinary = async (filePath: string): Promise<string | null> => {
       },
     );
 
-    // delete local temp file
-
-    fs.unlinkSync(filePath);
+    // delete local temp file if requested
+    if (deleteAfterUpload) {
+      fs.unlinkSync(filePath);
+    }
 
     return result.secure_url;
   } catch (error) {
     console.log(error);
 
-    if (filePath && fs.existsSync(filePath)) {
+    if (filePath && fs.existsSync(filePath) && deleteAfterUpload) {
       fs.unlinkSync(filePath);
     }
 

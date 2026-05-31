@@ -22,6 +22,8 @@ import watchLaterRouter from "./src/routes/watchlater.route.js";
 import studioRouter from "./src/routes/studio.route.js";
 import postRouter from "./src/routes/post.route.js";
 import verifyRouter from "./src/routes/verify.route.js";
+import { connectRabbitMQ } from "./src/queue/rabbitmq.js";
+import { startConsumer } from "./src/queue/consumer.js";
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -79,6 +81,10 @@ app.use("/api/watch-later", watchLaterRouter);
 app.use("/api/studio", studioRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/verify", verifyRouter);
+app.use(
+  "/stream",
+  express.static("uploads"),
+);
 // ---------------- HEALTH CHECK ----------------
 
 app.get("/", (_req: Request, res: Response) => {
@@ -93,6 +99,9 @@ app.get("/", (_req: Request, res: Response) => {
 const startServer = async () => {
   try {
     await prisma.$connect();
+
+    await connectRabbitMQ();
+    await startConsumer();
 
     console.log("Database connected successfully");
 

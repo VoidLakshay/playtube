@@ -92,7 +92,7 @@ model Video {
 
   description String @default("")
 
-  videoUrl String
+  videoUrl String?
 
   thumbnailUrl String
 
@@ -107,6 +107,10 @@ model Video {
   isShort Boolean @default(false)
 
   aspectRatio String @default("16:9")
+
+  transcodingStatus String @default("processing")
+
+  hlsUrl String?
 
   channelId String
 
