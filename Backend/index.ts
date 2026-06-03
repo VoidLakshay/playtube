@@ -81,10 +81,7 @@ app.use("/api/watch-later", watchLaterRouter);
 app.use("/api/studio", studioRouter);
 app.use("/api/posts", postRouter);
 app.use("/api/verify", verifyRouter);
-app.use(
-  "/stream",
-  express.static("uploads"),
-);
+
 // ---------------- HEALTH CHECK ----------------
 
 app.get("/", (_req: Request, res: Response) => {
@@ -102,6 +99,7 @@ const startServer = async () => {
 
     await connectRabbitMQ();
     await startConsumer();
+
 
     console.log("Database connected successfully");
 

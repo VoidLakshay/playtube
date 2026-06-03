@@ -1,8 +1,8 @@
 import fs from "fs";
-import path from "path";
 
 import prisma from "../lib/prisma.js";
-import uploadOnCloudinary from "../config/cloudinary.js";
+import { uploadHLSFolderToS3 } from "../utils/uploadHLSFolderToS3.js";
+import { uploadVideoToS3 } from "../utils/uploadVideoToS3.js";
 
 import { generateMultiQualityHLS } from "../utils/generateMultiQualityHLS.js";
 import { getVideoDuration } from "../utils/getVideoDuration.js";
@@ -16,38 +16,14 @@ export const processVideo = async (
   let hlsFolder: string | null = null;
 
   try {
+    console.log("PROCESSING VIDEO:", videoId);
 
-    console.log(
-      "PROCESSING VIDEO:",
+    const absoluteVideoPath = videoPath;
+
+    const uploadedVideo = await uploadVideoToS3(
+      absoluteVideoPath,
       videoId,
     );
-
-    const absoluteVideoPath =
-      videoPath
-
-    console.log(
-      "VIDEO PATH:",
-      videoPath,
-    );
-
-    console.log(
-      "ABSOLUTE PATH:",
-      absoluteVideoPath,
-    );
-
-    console.log(
-      "FILE EXISTS:",
-      fs.existsSync(
-        absoluteVideoPath,
-      ),
-    );
-
-    // Upload original video to Cloudinary first (don't delete yet, need for transcoding)
-    const uploadedVideo = await uploadOnCloudinary(absoluteVideoPath, false);
-
-    if (!uploadedVideo) {
-      throw new Error("Failed to upload video to Cloudinary");
-    }
 
     transcodedPath =
       `uploads/transcoded-${Date.now()}.mp4`;
@@ -65,6 +41,11 @@ export const processVideo = async (
       hlsFolder,
     );
 
+    await uploadHLSFolderToS3(
+      hlsFolder,
+      `videos/${videoId}`,
+    );
+
     const duration =
       await getVideoDuration(
         transcodedPath,
@@ -76,11 +57,12 @@ export const processVideo = async (
       },
 
       data: {
-        videoUrl: uploadedVideo,
-        duration,
+        videoUrl: uploadedVideo.url,
 
         hlsUrl:
-          `${hlsFolder}/master.m3u8`,
+          `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/videos/${videoId}/master.m3u8`,
+
+        duration,
 
         transcodingStatus:
           "completed",
@@ -91,9 +73,7 @@ export const processVideo = async (
       "VIDEO PROCESSING COMPLETED:",
       videoId,
     );
-
   } catch (error) {
-
     console.error(
       "VIDEO PROCESSING FAILED:",
       error,
@@ -109,24 +89,39 @@ export const processVideo = async (
           "failed",
       },
     });
-
   } finally {
-    // Clean up all local files regardless of success/failure
     try {
-      if (videoPath && fs.existsSync(videoPath)) {
+      if (
+        videoPath &&
+        fs.existsSync(videoPath)
+      ) {
         fs.unlinkSync(videoPath);
       }
 
-      if (transcodedPath && fs.existsSync(transcodedPath)) {
+      if (
+        transcodedPath &&
+        fs.existsSync(transcodedPath)
+      ) {
         fs.unlinkSync(transcodedPath);
       }
 
-      if (hlsFolder && fs.existsSync(hlsFolder)) {
-        // Recursively delete HLS folder
-        fs.rmSync(hlsFolder, { recursive: true, force: true });
+      if (
+        hlsFolder &&
+        fs.existsSync(hlsFolder)
+      ) {
+        fs.rmSync(
+          hlsFolder,
+          {
+            recursive: true,
+            force: true,
+          },
+        );
       }
     } catch (cleanupError) {
-      console.error("Cleanup failed:", cleanupError);
+      console.error(
+        "Cleanup failed:",
+        cleanupError,
+      );
     }
   }
 };
