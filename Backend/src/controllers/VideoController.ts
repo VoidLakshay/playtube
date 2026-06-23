@@ -58,7 +58,6 @@ export const uploadVideo = async (req: AuthRequest, res: Response) => {
     }
     console.log("video path:", files.video[0].path);
 
-   
     // ======================================================
     // THUMBNAIL VALIDATION
     // ======================================================
@@ -84,37 +83,30 @@ export const uploadVideo = async (req: AuthRequest, res: Response) => {
     // ======================================================
     // CREATE VIDEO
     // ======================================================
-      
+
     const video = await prisma.video.create({
-  data: {
-    title,
-    description,
-    videoUrl: null, // we'll set this after cloudinary upload from worker
-    thumbnailUrl: uploadedThumbnail,
-   duration: 0,
-hlsUrl: null,
-transcodingStatus: "processing",
-    isShort: isShort === "true",
-    aspectRatio: isShort === "true" ? "9:16" : "16:9",
-    channelId: channel.id,
-  },
-});
+      data: {
+        title,
+        description,
+        videoUrl: null, // we'll set this after cloudinary upload from worker
+        thumbnailUrl: uploadedThumbnail,
+        duration: 0,
+        hlsUrl: null,
+        transcodingStatus: "processing",
+        isShort: isShort === "true",
+        aspectRatio: isShort === "true" ? "9:16" : "16:9",
+        channelId: channel.id,
+      },
+    });
 
+    const absoluteVideoPath = path.resolve(files.video[0].path);
 
-const absoluteVideoPath =
-  path.resolve(
-    files.video[0].path,
-  );
+    await sendVideoJob({
+      videoId: video.id,
+      videoPath: absoluteVideoPath,
+    });
 
-await sendVideoJob({
-  videoId: video.id,
-  videoPath: absoluteVideoPath,
-});
-
-console.log(
-  "VIDEO JOB SENT:",
-  video.id,
-);
+    console.log("VIDEO JOB SENT:", video.id);
 
     // ======================================================
     // INCREMENT VIDEO COUNT
@@ -401,6 +393,9 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    let liked: boolean;
+    let likesCount: number;
+
     // ======================================================
     // UNLIKE
     // ======================================================
@@ -412,7 +407,7 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
         },
       });
 
-      await prisma.video.update({
+      const updatedVideo = await prisma.video.update({
         where: {
           id: videoId,
         },
@@ -424,9 +419,13 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
         },
       });
 
+      liked = false;
+      likesCount = updatedVideo.likesCount;
+
       return res.status(200).json({
         success: true,
-
+        liked,
+        likesCount,
         message: "Video unliked",
       });
     }
@@ -443,7 +442,7 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    await prisma.video.update({
+    const updatedVideo = await prisma.video.update({
       where: {
         id: videoId,
       },
@@ -455,9 +454,13 @@ export const toggleLike = async (req: AuthRequest, res: Response) => {
       },
     });
 
+    liked = true;
+    likesCount = updatedVideo.likesCount;
+
     return res.status(200).json({
       success: true,
-
+      liked,
+      likesCount,
       message: "Video liked",
     });
   } catch (error) {

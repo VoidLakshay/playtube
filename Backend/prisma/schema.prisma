@@ -92,7 +92,7 @@ model Video {
 
   description String @default("")
 
-  videoUrl String?
+  videoUrl String
 
   thumbnailUrl String
 
@@ -111,7 +111,7 @@ model Video {
   transcodingStatus String @default("processing")
 
   hlsUrl String?
-
+   spriteUrl String?
   channelId String
 
   channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)

@@ -82,29 +82,29 @@ authRouter.get(
   passport.authenticate("google", {
     session: false,
 
-    failureRedirect: "/login",
+    failureRedirect: process.env.FRONTEND_URL || "http://localhost:5173/login",
   }),
 
   (req, res) => {
     const data = req.user as any;
 
+    // Store tokens in cookies
     res.cookie("accessToken", data.accessToken, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000, // 15 minutes
     });
 
     res.cookie("refreshToken", data.refreshToken, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    return res.status(200).json({
-      success: true,
-
-      user: data.user,
-
-      accessToken: data.accessToken,
-
-      refreshToken: data.refreshToken,
-    });
+    // Redirect to frontend home page
+    res.redirect(process.env.FRONTEND_URL || "http://localhost:5173");
   },
 );
 

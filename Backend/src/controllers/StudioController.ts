@@ -4,9 +4,9 @@ import prisma from "../lib/prisma.js";
 
 import type { AuthRequest } from "../middleware/isAuth.js";
 
-// ======================================
+// ======================================================
 // GET STUDIO DASHBOARD
-// ======================================
+// ======================================================
 
 export const getStudioDashboard = async (
   req: AuthRequest,
@@ -33,6 +33,20 @@ export const getStudioDashboard = async (
       where: {
         channelId: channel.id,
       },
+      include: {
+        channel: {
+          select: {
+            id: true,
+            channelName: true,
+            logoUrl: true,
+            handle: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 10,
     });
 
     const totalViews = videos.reduce((acc, video) => acc + video.views, 0);
@@ -50,6 +64,10 @@ export const getStudioDashboard = async (
         totalLikes,
 
         subscribers: channel.subscribersCount,
+        
+        videos,
+        
+        channel,
       },
     });
 

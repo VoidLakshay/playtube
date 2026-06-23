@@ -1,8 +1,7 @@
 import fs from "fs";
-
+import path from "path";
+import { generateSprite } from "../utils/generateSprite.js";
 import prisma from "../lib/prisma.js";
-import { uploadHLSFolderToS3 } from "../utils/uploadHLSFolderToS3.js";
-import { uploadVideoToS3 } from "../utils/uploadVideoToS3.js";
 
 import { generateMultiQualityHLS } from "../utils/generateMultiQualityHLS.js";
 import { getVideoDuration } from "../utils/getVideoDuration.js";
@@ -12,20 +11,34 @@ export const processVideo = async (
   videoId: string,
   videoPath: string,
 ) => {
-  let transcodedPath: string | null = null;
-  let hlsFolder: string | null = null;
-
   try {
-    console.log("PROCESSING VIDEO:", videoId);
 
-    const absoluteVideoPath = videoPath;
-
-    const uploadedVideo = await uploadVideoToS3(
-      absoluteVideoPath,
+    console.log(
+      "PROCESSING VIDEO:",
       videoId,
     );
 
-    transcodedPath =
+    const absoluteVideoPath =
+      videoPath
+
+    console.log(
+      "VIDEO PATH:",
+      videoPath,
+    );
+
+    console.log(
+      "ABSOLUTE PATH:",
+      absoluteVideoPath,
+    );
+
+    console.log(
+      "FILE EXISTS:",
+      fs.existsSync(
+        absoluteVideoPath,
+      ),
+    );
+
+    const transcodedPath =
       `uploads/transcoded-${Date.now()}.mp4`;
 
     await transcodeVideo(
@@ -33,18 +46,20 @@ export const processVideo = async (
       transcodedPath,
     );
 
-    hlsFolder =
+    const hlsFolder =
       `uploads/hls-${Date.now()}`;
 
     await generateMultiQualityHLS(
       transcodedPath,
       hlsFolder,
     );
+    const spritePath =
+  `uploads/sprite-${Date.now()}.jpg`;
 
-    await uploadHLSFolderToS3(
-      hlsFolder,
-      `videos/${videoId}`,
-    );
+await generateSprite(
+  transcodedPath,
+  spritePath,
+);
 
     const duration =
       await getVideoDuration(
@@ -57,23 +72,26 @@ export const processVideo = async (
       },
 
       data: {
-        videoUrl: uploadedVideo.url,
+  duration,
 
-        hlsUrl:
-          `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/videos/${videoId}/master.m3u8`,
+  hlsUrl:
+    `${hlsFolder}/master.m3u8`,
 
-        duration,
+  spriteUrl:
+    spritePath,
 
-        transcodingStatus:
-          "completed",
-      },
+  transcodingStatus:
+    "completed",
+}
     });
 
     console.log(
       "VIDEO PROCESSING COMPLETED:",
       videoId,
     );
+
   } catch (error) {
+
     console.error(
       "VIDEO PROCESSING FAILED:",
       error,
@@ -89,39 +107,6 @@ export const processVideo = async (
           "failed",
       },
     });
-  } finally {
-    try {
-      if (
-        videoPath &&
-        fs.existsSync(videoPath)
-      ) {
-        fs.unlinkSync(videoPath);
-      }
 
-      if (
-        transcodedPath &&
-        fs.existsSync(transcodedPath)
-      ) {
-        fs.unlinkSync(transcodedPath);
-      }
-
-      if (
-        hlsFolder &&
-        fs.existsSync(hlsFolder)
-      ) {
-        fs.rmSync(
-          hlsFolder,
-          {
-            recursive: true,
-            force: true,
-          },
-        );
-      }
-    } catch (cleanupError) {
-      console.error(
-        "Cleanup failed:",
-        cleanupError,
-      );
-    }
   }
 };

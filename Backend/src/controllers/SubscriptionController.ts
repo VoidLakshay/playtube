@@ -192,3 +192,38 @@ export const checkSubscriptionStatus = async (
     });
   }
 };
+
+// ======================================
+// GET MY SUBSCRIPTIONS
+// ======================================
+
+export const getMySubscriptions = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const userId = req.userId;
+
+    const subscriptions = await prisma.subscription.findMany({
+      where: {
+        subscriberId: userId!,
+      },
+      include: {
+        channel: true,
+      },
+    });
+
+    const channels = subscriptions.map(sub => sub.channel);
+
+    return res.status(200).json({
+      success: true,
+      channels,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Fetch subscriptions failed",
+    });
+  }
+};

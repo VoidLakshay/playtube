@@ -6,6 +6,7 @@ import {
   toggleSubscription,
   getChannelSubscribers,
   checkSubscriptionStatus,
+  getMySubscriptions,
 } from "../controllers/SubscriptionController.js";
 
 const subscriptionRouter = Router();
@@ -36,6 +37,16 @@ subscriptionRouter.get(
   isAuth,
 
   checkSubscriptionStatus,
+);
+
+// get my subscriptions
+
+subscriptionRouter.get(
+  "/my",
+
+  isAuth,
+
+  getMySubscriptions,
 );
 
 export default subscriptionRouter;
