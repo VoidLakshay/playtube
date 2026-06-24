@@ -6,7 +6,7 @@ import VideoCard from '../components/video/VideoCard';
 import { Loader2, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Video } from '../types';
-import { getImageUrl } from '../utils/image';
+import { getImageUrl, getFallbackAvatar } from '../utils/image';
 
 const Profile: React.FC = () => {
   const { handle } = useParams<{ handle: string }>();
@@ -111,14 +111,20 @@ const Profile: React.FC = () => {
   return (
     <div>
       <div className="h-48 bg-gradient-to-r from-blue-600 to-purple-600">
-        <img
-          src={getImageUrl(channel.bannerUrl)}
-          alt="Banner"
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/1920x400?text=Banner';
-          }}
-        />
+      {channel.bannerUrl ? (
+  <img
+    src={getImageUrl(channel.bannerUrl)}
+    alt="Banner"
+    className="w-full h-full object-cover"
+    onError={(e) => {
+      e.currentTarget.style.display = "none";
+    }}
+  />
+) : (
+  <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-white text-lg font-bold">
+    BANNER
+  </div>
+)}
       </div>
 
       <div className="px-4 py-6 md:px-6 lg:px-8">
@@ -128,7 +134,7 @@ const Profile: React.FC = () => {
             alt={channel.channelName}
             className="w-32 h-32 rounded-full border-4 border-dark-bg object-cover"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/128?text=Logo';
+              (e.target as HTMLImageElement).src = getFallbackAvatar();
             }}
           />
           <div className="flex-1">

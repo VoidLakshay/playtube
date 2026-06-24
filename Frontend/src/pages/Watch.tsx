@@ -9,12 +9,13 @@ import { historyService } from '../services/history';
 import { watchLaterService } from '../services/watchLater';
 import VideoCard from '../components/video/VideoCard';
 import QualitySelector from '../components/video/QualitySelector';
+import TimelinePreview from '../components/video/TimelinePreview';
 import { ThumbsUp, Share2, MessageSquare, Loader2, List, Clock } from 'lucide-react';
 import { WatchPageSkeleton } from '../components/common/Skeletons';
 import Hls from 'hls.js';
 import { toast } from 'sonner';
 import type { Comment } from '../types';
-import { getImageUrl } from '../utils/image';
+import { getImageUrl, getFallbackAvatar } from '../utils/image';
 
 const formatViews = (views: number): string => {
   if (views >= 1000000) {
@@ -38,6 +39,8 @@ const Watch: React.FC = () => {
   const dispatch = useAppDispatch();
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
@@ -50,6 +53,10 @@ const Watch: React.FC = () => {
   const [subscribing, setSubscribing] = useState(false);
   const [isInWatchLater, setIsInWatchLater] = useState(false);
   const [addingToWatchLater, setAddingToWatchLater] = useState(false);
+  const [hoverPosition, setHoverPosition] = useState(0);
+  const [isHoveringProgress, setIsHoveringProgress] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [debugData, setDebugData] = useState<any>(null);
 
   const { currentVideo: video, recommendedVideos, loading } = useAppSelector(
     (state) => state.videos
@@ -152,29 +159,53 @@ const Watch: React.FC = () => {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
-      if (video.hlsUrl) {
+
+      const hlsUrl = getImageUrl(video.hlsUrl);
+      const directVideoUrl = getImageUrl(video.videoUrl);
+
+      console.log('===== VIDEO DATA =====', video);
+      console.log('Original hlsUrl:', video.hlsUrl);
+      console.log('Processed hlsUrl:', hlsUrl);
+      console.log('Original videoUrl:', video.videoUrl);
+      console.log('Processed videoUrl:', directVideoUrl);
+      console.log('transcodingStatus:', video.transcodingStatus);
+
+      if (video.transcodingStatus === 'processing') {
+        toast.info('Video is still processing, please wait...');
+      } else if (video.transcodingStatus === 'failed') {
+        toast.error('Video processing failed');
+      } else if (hlsUrl && video.hlsUrl) {
         if (Hls.isSupported()) {
-          const hls = new Hls();
+          const hls = new Hls({
+            debug: true
+          });
           hlsRef.current = hls;
-          hls.loadSource(video.hlsUrl);
+          hls.loadSource(hlsUrl);
           hls.attachMedia(videoElement);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            videoElement.play().catch(() => {});
+            console.log('HLS manifest parsed');
+            videoElement.play().catch(err => {
+              console.error('Play error:', err);
+            });
           });
           hls.on(Hls.Events.ERROR, (_event, data) => {
+            console.error('HLS ERROR:', data);
             if (data.fatal) {
               console.error('HLS fatal error:', data);
               toast.error('Failed to load video');
             }
           });
         } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-          videoElement.src = video.hlsUrl;
+          videoElement.src = hlsUrl;
           videoElement.addEventListener('loadedmetadata', () => {
-            videoElement.play().catch(() => {});
+            videoElement.play().catch(err => console.error('Play error:', err));
           });
         }
-      } else if (video.videoUrl) {
-        videoElement.src = video.videoUrl;
+      } else if (directVideoUrl && video.videoUrl) {
+        videoElement.src = directVideoUrl;
+        videoElement.addEventListener('loadedmetadata', () => {
+          videoElement.play().catch(err => console.error('Play error:', err));
+        });
       }
     }
   }, [video]);
@@ -232,9 +263,9 @@ const Watch: React.FC = () => {
     if (!video || addingToWatchLater) return;
     setAddingToWatchLater(true);
     try {
-      await watchLaterService.toggleWatchLater(video.id);
-      setIsInWatchLater(!isInWatchLater);
-      toast.success(!isInWatchLater ? 'Added to Watch Later!' : 'Removed from Watch Later!');
+      const result = await watchLaterService.toggleWatchLater(video.id);
+      setIsInWatchLater(result.saved);
+      toast.success(result.saved ? 'Added to Watch Later!' : 'Removed from Watch Later!');
     } catch (err) {
       toast.error('Failed to update watch later');
     } finally {
@@ -252,35 +283,76 @@ const Watch: React.FC = () => {
     toast.info('Add to Playlist feature coming soon!');
   };
 
+  const handleProgressMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const position = (e.clientX - rect.left) / rect.width;
+    setHoverPosition(Math.max(0, Math.min(1, position)));
+    setIsHoveringProgress(true);
+  };
+
+  const handleProgressMouseLeave = () => {
+    setIsHoveringProgress(false);
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || !videoRef.current) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const position = (e.clientX - rect.left) / rect.width;
+    const seekTime = position * video.duration;
+    videoRef.current.currentTime = seekTime;
+  };
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    const handleTimeUpdate = () => {
+      if (videoElement) {
+        setCurrentTime(videoElement.currentTime);
+      }
+    };
+    videoElement?.addEventListener("timeupdate", handleTimeUpdate);
+    return () => {
+      videoElement?.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, []);
+
+  // Log full video data for debugging
+  useEffect(() => {
+    if (video) {
+      console.log("=== FULL VIDEO DATA ===");
+      console.log(video);
+    }
+  }, [video]);
+
   const handleAddComment = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!isAuthenticated) {
-    toast.error('Please sign in to comment');
-    return;
-  }
+    if (!isAuthenticated) {
+      toast.error('Please sign in to comment');
+      return;
+    }
 
-  if (!newComment.trim() || !video) return;
+    if (!newComment.trim() || !video) return;
 
-  setAddingComment(true);
+    setAddingComment(true);
 
-  try {
-    const comment = await commentService.addComment(
-      video.id,
-      newComment.trim()
-    );
+    try {
+      const comment = await commentService.addComment(
+        video.id,
+        newComment.trim()
+      );
 
-    setComments((prev) => [comment, ...prev]);
+      setComments((prev) => [comment, ...prev]);
 
-    setNewComment('');
+      setNewComment('');
 
-    toast.success('Comment added!');
-  } catch (err) {
-    toast.error('Failed to add comment');
-  } finally {
-    setAddingComment(false);
-  }
-};
+      toast.success('Comment added!');
+    } catch (err) {
+      toast.error('Failed to add comment');
+    } finally {
+      setAddingComment(false);
+    }
+  };
 
   if (loading) {
     return <WatchPageSkeleton />;
@@ -303,15 +375,35 @@ const Watch: React.FC = () => {
     <div className="px-4 py-6 md:px-6 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="aspect-video bg-black rounded-xl overflow-hidden relative">
+          <div className="aspect-video bg-black rounded-xl overflow-hidden relative group">
             <video
               ref={videoRef}
               className="w-full h-full"
               controls
               playsInline
             />
+            {/* Custom hover area for timeline preview - positioned over the bottom where native seek bar is */}
+            {video.spriteUrl && (
+              <div
+                ref={progressBarRef}
+                className="absolute bottom-0 left-0 right-0 h-20 cursor-pointer z-10"
+                onMouseMove={handleProgressMouseMove}
+                onMouseLeave={handleProgressMouseLeave}
+                onClick={handleProgressClick}
+              >
+                {isHoveringProgress && (
+                  <TimelinePreview
+                    spriteUrl={video.spriteUrl}
+                    duration={video.duration}
+                    hoverPosition={hoverPosition}
+                    previewContainerRef={previewContainerRef}
+                    onDebug={setDebugData}
+                  />
+                )}
+              </div>
+            )}
             {/* Custom controls overlay */}
-            <div className="absolute bottom-4 right-4 flex items-center gap-2">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
               <QualitySelector hls={hlsRef.current} />
             </div>
           </div>
@@ -327,7 +419,7 @@ const Watch: React.FC = () => {
                     alt={video.channel.channelName}
                     className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=Channel';
+                      (e.target as HTMLImageElement).src = getFallbackAvatar();
                     }}
                   />
                 </Link>
@@ -432,7 +524,7 @@ const Watch: React.FC = () => {
                     alt="Profile"
                     className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=User';
+                      (e.target as HTMLImageElement).src = getFallbackAvatar();
                     }}
                   />
                   <div className="flex-1">
@@ -480,7 +572,7 @@ const Watch: React.FC = () => {
                         alt={comment.user.userName}
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=User';
+                          (e.target as HTMLImageElement).src = getFallbackAvatar();
                         }}
                       />
                       <div>

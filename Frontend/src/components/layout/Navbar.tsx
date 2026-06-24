@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../app/hooks';
 import { logout } from '../../features/auth/authSlice';
 import { Menu, Search, Video, Bell, User, LayoutDashboard } from 'lucide-react';
-import { getImageUrl } from '../../utils/image';
+import { getImageUrl, getFallbackAvatar } from '../../utils/image';
 
 interface NavbarProps {
   onToggleSidebar: () => void;
@@ -99,7 +99,7 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                   alt="Profile"
                   className="w-8 h-8 rounded-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/32?text=User';
+                    (e.target as HTMLImageElement).src = getFallbackAvatar();
                   }}
                 />
               </button>

@@ -92,7 +92,7 @@ model Video {
 
   description String @default("")
 
-  videoUrl String
+  videoUrl String?
 
   thumbnailUrl String
 

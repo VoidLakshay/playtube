@@ -236,6 +236,16 @@ export const getChannelByHandle = async (req: Request, res: Response) => {
           orderBy: {
             createdAt: "desc",
           },
+          include: {
+            channel: {
+              select: {
+                id: true,
+                channelName: true,
+                logoUrl: true,
+                handle: true,
+              },
+            },
+          },
         },
       },
     });

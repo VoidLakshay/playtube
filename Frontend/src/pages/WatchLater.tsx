@@ -16,8 +16,8 @@ const WatchLater: React.FC = () => {
         try {
           setLoading(true);
           const videosData = await watchLaterService.getWatchLater();
-          // Extract videos from the response (could be items with video property)
-          const videos = videosData.map((item: any) => item.video || item);
+          // Extract videos from the response (each item is a watchLater entry with video property)
+          const videos = videosData.map((item: any) => item.video);
           setWatchLaterVideos(videos);
         } catch (err) {
           console.error('Failed to load watch later:', err);

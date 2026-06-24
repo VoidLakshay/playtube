@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppSelector } from '../app/hooks';
 import { subscriptionService } from '../services/subscription';
 import { Loader2, Users } from 'lucide-react';
-import { getImageUrl } from '../utils/image';
+import { getImageUrl, getFallbackAvatar } from '../utils/image';
 import type { Channel } from '../types';
 
 const Subscriptions: React.FC = () => {
@@ -62,7 +62,7 @@ const Subscriptions: React.FC = () => {
                   alt={channel.channelName}
                   className="w-12 h-12 rounded-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48?text=Channel';
+                    (e.target as HTMLImageElement).src = getFallbackAvatar();
                   }}
                 />
                 <div>

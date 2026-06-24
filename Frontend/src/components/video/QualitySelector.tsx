@@ -64,7 +64,7 @@ const QualitySelector: React.FC<QualitySelectorProps> = ({ hls }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 w-48 bg-dark-card border border-dark-border rounded-xl shadow-xl">
+        <div className="absolute top-full right-0 mt-2 w-48 bg-dark-card border border-dark-border rounded-xl shadow-xl">
           <div className="p-2">
             {/* Auto option */}
             <button

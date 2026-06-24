@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Video } from '../../types';
-import { getImageUrl } from '../../utils/image';
+import { getImageUrl, getFallbackAvatar } from '../../utils/image';
 
 interface VideoCardProps {
   video: Video;
@@ -57,13 +57,13 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       </div>
       <div className="mt-3 flex gap-3">
         <img
-          src={getImageUrl(channelLogoUrl)}
-          alt={channelName}
-          className="w-9 h-9 rounded-full object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=Channel';
-          }}
-        />
+              src={getImageUrl(channelLogoUrl)}
+              alt={channelName}
+              className="w-9 h-9 rounded-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = getFallbackAvatar();
+              }}
+            />
         <div className="flex-1 min-w-0">
           <h3 className="text-white font-medium text-sm line-clamp-2 group-hover:text-blue-400">
             {video.title}

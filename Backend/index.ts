@@ -5,6 +5,11 @@ import "dotenv/config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import passport from "./src/config/passport.js";
 
@@ -46,6 +51,9 @@ app.use(
 );
 
 app.use(cookieParser());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ---------------- SESSION ----------------
 

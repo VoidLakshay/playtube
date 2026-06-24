@@ -39,6 +39,7 @@ export interface Video {
   aspectRatio: string;
   transcodingStatus: string;
   hlsUrl?: string;
+  spriteUrl?: string;
   channelId: string;
   channel: Channel;
   comments: Comment[];
