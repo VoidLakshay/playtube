@@ -30,11 +30,7 @@ async (
     crypto.randomBytes(32)
     .toString("hex");
 
-  console.log(
-    "generated token:",
-    verifyToken
-  );
-
+ 
   // ======================================
   // SAVE TOKEN
   // ======================================
@@ -58,17 +54,14 @@ async (
     },
   });
 
-  console.log(
-    "token saved in db"
-  );
-
+ 
   // ======================================
   // VERIFY URL
   // ======================================
 
   const verifyUrl =
     `${process.env.FRONTEND_URL || "http://localhost:5173"}/verify/${verifyToken}`;
-console.log("VERIFY URL:", verifyUrl);
+// console.log("VERIFY URL:", verifyUrl);
   // ======================================
   // SEND EMAIL
   // ======================================
@@ -83,11 +76,7 @@ const info = await transporter.sendMail({
   `,
 });
 
-console.log("EMAIL INFO:");
-console.log(info);
 
-console.log("EMAIL USER:", process.env.EMAIL_USER);
-console.log("PASS LENGTH:", process.env.EMAIL_PASS?.length);
 
 }; 
 
