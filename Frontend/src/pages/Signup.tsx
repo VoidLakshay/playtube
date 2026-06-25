@@ -55,9 +55,10 @@ const Signup: React.FC = () => {
   const onSubmit = async (data: SignupFormData) => {
     const result = await dispatch(signup(data));
     if (signup.fulfilled.match(result)) {
-      toast.success('Account created successfully!');
-      navigate('/');
-    }
+  toast.success("Verification email sent. Please check your inbox.");
+
+  navigate("/login");
+}
   };
 
   return (

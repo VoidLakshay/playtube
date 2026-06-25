@@ -15,6 +15,8 @@ import {
   sendResetOtp,
   verifyResetOtp,
   refreshAccessToken,
+  resendVerificationEmail,
+  verifyEmail,
 } from "../controllers/Authcontroller.js";
 import { getCurrentUser } from "../controllers/Usercontroller.js";
 
@@ -34,6 +36,7 @@ authRouter.post(
 
   refreshAccessToken,
 );
+authRouter.get("/verify/:token", verifyEmail);
 
 authRouter.post(
   "/signin",

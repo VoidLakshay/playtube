@@ -15,7 +15,13 @@ const transporter =
         process.env.EMAIL_PASS,
     },
   });
-
+transporter.verify((err, success) => {
+  if (err) {
+    console.log("SMTP ERROR:", err);
+  } else {
+    console.log("SMTP READY");
+  }
+});
 
 export default
 transporter;

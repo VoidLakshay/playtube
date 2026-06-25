@@ -8,127 +8,74 @@ datasource db {
 }
 
 model User {
-  id String @id @default(cuid())
-
-  userName String
-
-  email String @unique
-
-  password String
-
-  photoUrl String @default("")
-
-  channel Channel?
-
-  resetPasswordToken String?
-
+  id                  String         @id @default(cuid())
+  email               String         @unique
+  password            String
+  createdAt           DateTime       @default(now())
+  emailVerifyExpiry   DateTime?
+  emailVerifyToken    String?
+  isVerified          Boolean        @default(false)
+  photoUrl            String         @default("")
+  refreshToken        String?
+  resetOtp            String?
+  resetOtpExpiry      DateTime?
   resetPasswordExpiry DateTime?
-
-  resetOtp String?
-
-  resetOtpExpiry DateTime?
-
-  subscriptions Subscription[] @relation("subscriber")
-
-  likedVideos Like[]
-
-  playlists Playlist[]
-
-  comments Comment[]
-
-  watchHistory WatchHistory[]
-
-  watchLater WatchLater[]
-
-  createdAt DateTime @default(now())
-
-  updatedAt    DateTime @updatedAt
-  refreshToken String?
-  isVerified   Boolean  @default(false)
-
-  emailVerifyToken String?
-
-  emailVerifyExpiry DateTime?
+  resetPasswordToken  String?
+  updatedAt           DateTime       @updatedAt
+  userName            String
+  channel             Channel?
+  comments            Comment[]
+  likedVideos         Like[]
+  playlists           Playlist[]
+  subscriptions       Subscription[] @relation("subscriber")
+  watchHistory        WatchHistory[]
+  watchLater          WatchLater[]
 }
 
 model Channel {
-  id String @id @default(cuid())
-
-  channelName String
-
-  handle String @unique
-
-  description String @default("")
-
-  logoUrl String @default("")
-
-  bannerUrl String @default("")
-
-  subscribersCount Int @default(0)
-
-  videosCount Int @default(0)
-
-  userId String @unique
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  videos Video[]
-
-  posts Post[]
-
-  subscribers Subscription[]
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
+  id               String         @id @default(cuid())
+  channelName      String
+  handle           String         @unique
+  description      String         @default("")
+  logoUrl          String         @default("")
+  bannerUrl        String         @default("")
+  subscribersCount Int            @default(0)
+  videosCount      Int            @default(0)
+  userId           String         @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts            Post[]
+  subscribers      Subscription[]
+  videos           Video[]
 
   @@index([handle])
 }
 
 model Video {
-  id String @id @default(cuid())
-
-  title String
-
-  description String @default("")
-
-  videoUrl String?
-
-  thumbnailUrl String
-
-  duration Int @default(0)
-
-  views Int @default(0)
-
-  likesCount Int @default(0)
-
-  isPublished Boolean @default(true)
-
-  isShort Boolean @default(false)
-
-  aspectRatio String @default("16:9")
-
-  transcodingStatus String @default("processing")
-
-  hlsUrl String?
-   spriteUrl String?
-  channelId String
-
-  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-
-  comments Comment[]
-
-  likes Like[]
-
-  playlistVideos PlaylistVideo[]
-
-  watchHistory WatchHistory[]
-
-  watchLater WatchLater[]
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
+  id                String          @id @default(cuid())
+  title             String
+  description       String          @default("")
+  videoUrl          String?
+  thumbnailUrl      String
+  duration          Int             @default(0)
+  views             Int             @default(0)
+  likesCount        Int             @default(0)
+  isPublished       Boolean         @default(true)
+  isShort           Boolean         @default(false)
+  aspectRatio       String          @default("16:9")
+  transcodingStatus String          @default("processing")
+  hlsUrl            String?
+  channelId         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  spriteUrl         String?
+  comments          Comment[]
+  likes             Like[]
+  playlistVideos    PlaylistVideo[]
+  channel           Channel         @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  watchHistory      WatchHistory[]
+  watchLater        WatchLater[]
 
   @@index([channelId])
   @@index([isShort])
@@ -137,108 +84,74 @@ model Video {
 }
 
 model Comment {
-  id String @id @default(cuid())
-
-  text String
-
-  userId String
-
-  videoId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(cuid())
+  text      String
+  userId    String
+  videoId   String
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@index([videoId])
 }
 
 model Like {
-  id String @id @default(cuid())
-
-  userId String
-
-  videoId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([userId, videoId])
   @@index([videoId])
 }
 
 model Playlist {
-  id String @id @default(cuid())
-
-  name String
-
-  description String @default("")
-
-  userId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  videos PlaylistVideo[]
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
+  id          String          @id @default(cuid())
+  name        String
+  description String          @default("")
+  userId      String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videos      PlaylistVideo[]
 
   @@index([userId])
 }
 
 model PlaylistVideo {
-  id String @id @default(cuid())
-
+  id         String   @id @default(cuid())
   playlistId String
-
-  videoId String
-
-  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
-
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  videoId    String
+  createdAt  DateTime @default(now())
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([playlistId, videoId])
   @@index([videoId])
 }
 
 model Subscription {
-  id String @id @default(cuid())
-
+  id           String   @id @default(cuid())
   subscriberId String
-
-  channelId String
-
-  subscriber User @relation("subscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
-
-  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  channelId    String
+  createdAt    DateTime @default(now())
+  channel      Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  subscriber   User     @relation("subscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
 
   @@unique([subscriberId, channelId])
   @@index([channelId])
 }
 
 model WatchHistory {
-  id String @id @default(cuid())
-
-  userId String
-
-  videoId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
   watchedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([userId, videoId])
   @@index([watchedAt])
@@ -246,34 +159,24 @@ model WatchHistory {
 }
 
 model WatchLater {
-  id String @id @default(cuid())
-
-  userId String
-
-  videoId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([userId, videoId])
   @@index([userId])
 }
 
 model Post {
-  id String @id @default(cuid())
-
-  content String
-
-  imageUrl String @default("")
-
+  id        String   @id @default(cuid())
+  content   String
+  imageUrl  String   @default("")
   channelId String
-
-  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   @@index([channelId])
 }

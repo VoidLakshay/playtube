@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../../services/auth';
 import type { User } from '../../types';
 import axios from 'axios';
@@ -44,8 +44,7 @@ export const signup = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await authService.signup(data);
-      return response.user;
+      return await authService.signup(data);
     } catch (err: unknown) {
       return rejectWithValue(getErrorMessage(err, 'Signup failed'));
     }
@@ -83,11 +82,11 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<User>) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
+     .addCase(login.fulfilled, (state, action) => {
+  state.loading = false;
+  state.user = action.payload;
+  state.isAuthenticated = true;
+})
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -98,11 +97,13 @@ const authSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(signup.fulfilled, (state, action: PayloadAction<User>) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
+    .addCase(signup.fulfilled, (state) => {
+  state.loading = false;
+
+  // User must verify email before login
+  state.user = null;
+  state.isAuthenticated = false;
+})
       .addCase(signup.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
@@ -118,11 +119,11 @@ const authSlice = createSlice({
       .addCase(fetchCurrentUser.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCurrentUser.fulfilled, (state, action: PayloadAction<User>) => {
-        state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
-      })
+    .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+  state.loading = false;
+  state.user = action.payload;
+  state.isAuthenticated = true;
+})
       .addCase(fetchCurrentUser.rejected, (state) => {
         state.loading = false;
         state.user = null;

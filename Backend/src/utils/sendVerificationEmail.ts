@@ -67,44 +67,28 @@ async (
   // ======================================
 
   const verifyUrl =
-
-    `http://localhost:5000/api/verify/${verifyToken}`;
-
+    `${process.env.FRONTEND_URL || "http://localhost:5173"}/verify/${verifyToken}`;
+console.log("VERIFY URL:", verifyUrl);
   // ======================================
   // SEND EMAIL
   // ======================================
+const info = await transporter.sendMail({
+  from: process.env.EMAIL_USER,
+  to: email,
+  subject: "Verify your email",
+  html: `
+    <h2>Verify Your Email</h2>
+    <p>Click below to verify your account.</p>
+    <a href="${verifyUrl}">Verify Email</a>
+  `,
+});
 
-  await transporter.sendMail({
+console.log("EMAIL INFO:");
+console.log(info);
 
-    from:
-      process.env.EMAIL_USER,
+console.log("EMAIL USER:", process.env.EMAIL_USER);
+console.log("PASS LENGTH:", process.env.EMAIL_PASS?.length);
 
-    to: email,
+}; 
 
-    subject:
-      "Verify your email",
-
-    html: `
-
-      <h2>
-        Verify Your Email
-      </h2>
-
-      <p>
-        Click below to verify
-        your account:
-      </p>
-
-      <a href="${verifyUrl}">
-        Verify Email
-      </a>
-    `,
-  });
-
-  console.log(
-    "email sent successfully"
-  );
-};
-
-export default
-sendVerificationEmail;
+export default sendVerificationEmail;

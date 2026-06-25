@@ -18,8 +18,10 @@ import sendVerificationEmail from "../utils/sendVerificationEmail.js";
 // ---------------- SIGNUP ----------------
 
 export const signup = async (req: Request, res: Response) => {
+  console.log(req.body);
+console.log(req.file);
   try {
-    const { username, email, password } = req.body;
+    const { userName, email, password } = req.body;
 
     let photoUrl = "";
 
@@ -49,65 +51,24 @@ export const signup = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        userName: username,
-        email,
-        password: hashedPassword,
-        photoUrl,
-      },
-    });
+   const user = await prisma.user.create({
+  data: {
+    userName,
+    email,
+    password: hashedPassword,
+    photoUrl,
+  },
+});
 
-    const accessToken = generateAccessToken({
-      id: user.id,
-    });
+   // SEND VERIFICATION EMAIL
 
-    const refreshToken = generateRefreshToken({
-      id: user.id,
-    });
+await sendVerificationEmail(user.id, user.email);
 
-    // STORE REFRESH TOKEN
-
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
-
-      data: {
-        refreshToken,
-      },
-    });
-    // SEND VERIFICATION EMAIL
-
-    await sendVerificationEmail(
-      user.id,
-
-      user.email,
-    );
-
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(201).json({
-      success: true,
-
-      message: "Signup successful",
-
-      user,
-    });
+return res.status(201).json({
+  success: true,
+  message:
+    "Account created successfully. Please verify your email before logging in.",
+});
   } catch (error) {
     console.log(error);
 
@@ -118,7 +79,57 @@ export const signup = async (req: Request, res: Response) => {
 };
 
 // ---------------- SIGNIN ----------------
+// ---------------- VERIFY EMAIL ----------------
 
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const token = req.params.token as string;
+    if (!token) {
+      return res.status(400).json({
+        message: "Verification token missing",
+      });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        emailVerifyToken: token,
+        emailVerifyExpiry: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired verification link",
+      });
+    }
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        isVerified: true,
+        emailVerifyToken: null,
+        emailVerifyExpiry: null,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Email verification failed",
+    });
+  }
+};
 export const signin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -148,6 +159,13 @@ export const signin = async (req: Request, res: Response) => {
         message: "Invalid credentials",
       });
     }
+    if (!user.isVerified) {
+  return res.status(403).json({
+    success: false,
+    requiresVerification: true,
+    message: "Please verify your email before logging in.",
+  });
+}
 
     const accessToken = generateAccessToken({
       id: user.id,
@@ -243,6 +261,50 @@ export const signout = async (req: Request, res: Response) => {
 
     return res.status(500).json({
       message: "Signout failed",
+    });
+  }
+};
+
+// ---------------- RESEND VERIFICATION EMAIL ----------------
+
+export const resendVerificationEmail = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        message: "Email already verified",
+      });
+    }
+
+    await sendVerificationEmail(user.id, user.email);
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification email resent successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      message: "Failed to resend verification email",
     });
   }
 };

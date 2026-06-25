@@ -5,6 +5,7 @@ import { store } from './app/store';
 import { useAppDispatch, useAppSelector } from './app/hooks';
 import { fetchCurrentUser } from './features/auth/authSlice';
 import { Toaster } from 'sonner';
+import VerifyEmail from "./pages/VerifyEmail";
 import Layout from './components/layout/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -33,14 +34,10 @@ const AppContent: React.FC = () => {
   const [appLoading, setAppLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      dispatch(fetchCurrentUser()).finally(() => {
-        setAppLoading(false);
-      });
-    } else {
+    // Try to fetch current user (cookie is sent automatically)
+    dispatch(fetchCurrentUser()).finally(() => {
       setAppLoading(false);
-    }
+    });
   }, [dispatch]);
 
   if (appLoading || authLoading) {
@@ -57,6 +54,7 @@ const AppContent: React.FC = () => {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/verify/:token" element={<VerifyEmail />} />
         <Route
           path="/*"
           element={
