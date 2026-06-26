@@ -187,22 +187,21 @@ export const signin = async (req: Request, res: Response) => {
       },
     });
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
+  res.cookie("accessToken", accessToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+  maxAge: 15 * 60 * 1000,
+});
 
-      maxAge: 15 * 60 * 1000,
-    });
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
     return res.status(200).json({
       success: true,
 
@@ -239,17 +238,19 @@ export const signout = async (req: Request, res: Response) => {
       });
     }
 
-    res.clearCookie("accessToken", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-    });
+   res.clearCookie("accessToken", {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+});
 
-    res.clearCookie("refreshToken", {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-    });
+res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  path: "/",
+});
 
     return res.status(200).json({
       success: true,
@@ -312,6 +313,8 @@ export const resendVerificationEmail = async (req: Request, res: Response) => {
 // ---------------- REFRESH ACCESS TOKEN ----------------
 
 export const refreshAccessToken = async (req: Request, res: Response) => {
+  console.log("Cookies:", req.cookies);
+console.log("Cookie Header:", req.headers.cookie);
   try {
     const refreshToken = req.cookies.refreshToken;
 
