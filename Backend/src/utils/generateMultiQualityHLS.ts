@@ -4,11 +4,16 @@ import path from "path";
 
 const runCommand = (command: string) => {
   return new Promise<void>((resolve, reject) => {
-    exec(command, (error, _stdout, stderr) => {
 
-      console.log(stderr);
+    console.log("RUNNING:", command);
+
+    exec(command, (error, stdout, stderr) => {
+
+      console.log("STDOUT:", stdout);
+      console.log("STDERR:", stderr);
 
       if (error) {
+        console.error("FFMPEG ERROR:", error);
         reject(error);
         return;
       }
