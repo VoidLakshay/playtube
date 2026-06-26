@@ -71,7 +71,13 @@ authRouter.get(
 
 authRouter.get(
   "/google",
-
+  (req, res, next) => {
+    console.log("========== GOOGLE LOGIN ==========");
+    console.log("CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+    console.log("CALLBACK_URL:", process.env.GOOGLE_CALLBACK_URL);
+    console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+    next();
+  },
   passport.authenticate("google", {
     scope: ["profile", "email"],
   }),

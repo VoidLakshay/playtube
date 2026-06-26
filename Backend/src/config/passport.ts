@@ -8,7 +8,8 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateTokens.js";
-
+console.log("Passport Callback:", process.env.GOOGLE_CALLBACK_URL);
+console.log("Google Client ID:", process.env.GOOGLE_CLIENT_ID);
 passport.use(
   new GoogleStrategy(
     {
@@ -44,6 +45,7 @@ passport.use(
             email,
           },
         });
+        console.log("GOOGLE_CALLBACK_URL =", process.env.GOOGLE_CALLBACK_URL);
 
         // ======================================
         // CREATE USER IF NOT EXISTS
