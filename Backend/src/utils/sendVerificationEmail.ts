@@ -18,9 +18,8 @@ const sendVerificationEmail = async (
     },
   });
 
-  const verifyUrl = `${
-    process.env.FRONTEND_URL || "http://localhost:5173"
-  }/verify/${verifyToken}`;
+ const verifyUrl =
+`${process.env.FRONTEND_URL || "http://localhost:5173"}/verify/${verifyToken}`;
 
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
