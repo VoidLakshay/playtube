@@ -53,6 +53,30 @@ export const processVideo = async (
       transcodedPath,
       hlsFolder,
     );
+    console.log(
+  "MASTER EXISTS:",
+  fs.existsSync(path.join(hlsFolder, "master.m3u8"))
+);
+
+console.log(
+  "HLS ROOT FILES:",
+  fs.readdirSync(hlsFolder)
+);
+
+console.log(
+  "360 FILES:",
+  fs.readdirSync(path.join(hlsFolder, "360p"))
+);
+
+console.log(
+  "720 FILES:",
+  fs.readdirSync(path.join(hlsFolder, "720p"))
+);
+
+console.log(
+  "1080 FILES:",
+  fs.readdirSync(path.join(hlsFolder, "1080p"))
+);
     const spritePath =
   `uploads/sprite-${Date.now()}.jpg`;
 
