@@ -5,7 +5,7 @@ interface TimelinePreviewProps {
   spriteUrl: string | undefined | null;
   duration: number;
   hoverPosition: number; // 0-1
-  previewContainerRef: React.RefObject<HTMLDivElement>;
+ previewContainerRef: React.RefObject<HTMLDivElement | null>;
   onDebug?: (data: any) => void;
 }
 

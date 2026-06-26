@@ -55,8 +55,8 @@ const Watch: React.FC = () => {
   const [addingToWatchLater, setAddingToWatchLater] = useState(false);
   const [hoverPosition, setHoverPosition] = useState(0);
   const [isHoveringProgress, setIsHoveringProgress] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [debugData, setDebugData] = useState<any>(null);
+ 
+  
 
   const { currentVideo: video, recommendedVideos, loading } = useAppSelector(
     (state) => state.videos
@@ -295,19 +295,21 @@ const Watch: React.FC = () => {
     setIsHoveringProgress(false);
   };
 
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!progressBarRef.current || !videoRef.current) return;
-    const rect = progressBarRef.current.getBoundingClientRect();
-    const position = (e.clientX - rect.left) / rect.width;
-    const seekTime = position * video.duration;
-    videoRef.current.currentTime = seekTime;
-  };
+ const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  if (!progressBarRef.current || !videoRef.current || !video) return;
+
+  const rect = progressBarRef.current.getBoundingClientRect();
+  const position = (e.clientX - rect.left) / rect.width;
+
+  const seekTime = position * video.duration;
+  videoRef.current.currentTime = seekTime;
+};
 
   useEffect(() => {
     const videoElement = videoRef.current;
     const handleTimeUpdate = () => {
       if (videoElement) {
-        setCurrentTime(videoElement.currentTime);
+       
       }
     };
     videoElement?.addEventListener("timeupdate", handleTimeUpdate);
@@ -397,7 +399,7 @@ const Watch: React.FC = () => {
                     duration={video.duration}
                     hoverPosition={hoverPosition}
                     previewContainerRef={previewContainerRef}
-                    onDebug={setDebugData}
+                   onDebug={() => {}}
                   />
                 )}
               </div>
