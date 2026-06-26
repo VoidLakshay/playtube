@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
@@ -57,6 +58,20 @@ export const uploadVideo = async (req: AuthRequest, res: Response) => {
       });
     }
     console.log("video path:", files.video[0].path);
+    console.log(
+  "VIDEO EXISTS:",
+  fs.existsSync(files.video[0].path)
+);
+
+console.log(
+  "ABSOLUTE:",
+  path.resolve(files.video[0].path)
+);
+
+console.log(
+  "ABS EXISTS:",
+  fs.existsSync(path.resolve(files.video[0].path))
+);
 
     // ======================================================
     // THUMBNAIL VALIDATION

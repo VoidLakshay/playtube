@@ -11,6 +11,11 @@ export const processVideo = async (
   videoId: string,
   videoPath: string,
 ) => {
+  console.log("VIDEO PATH RECEIVED:", videoPath);
+  console.log(
+  "EXISTS:",
+  fs.existsSync(videoPath)
+);
   try {
 
     console.log(
