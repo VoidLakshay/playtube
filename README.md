@@ -67,7 +67,53 @@ A full-stack YouTube-inspired video streaming platform built with a modern produ
 * Search Videos
 * View Counter
 * Like Counter
+⚠️ Deployment Notes
 
+This project uses FFmpeg, RabbitMQ, Amazon S3, and background workers to process uploaded videos.
+
+The public demo is deployed on Render Free, which provides only 512 MB RAM. Due to this limitation:
+
+Video uploads may fail for large files.
+1080p transcoding is disabled in the demo deployment.
+The demo currently generates 360p and 720p HLS streams.
+The processing pipeline itself fully supports adding more qualities on servers with higher resources.
+
+For the best experience, deploy this project on a VPS or cloud server with at least 2 GB RAM.
+
+🚀 Running Locally
+
+To run the project successfully, make sure the following services are configured:
+
+PostgreSQL
+RabbitMQ (CloudAMQP or local)
+Amazon S3 Bucket
+Cloudinary
+FFmpeg installed and available in PATH
+Node.js 20+
+
+After configuring the .env file:
+
+# Backend
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npm run dev
+
+# Frontend
+npm install
+npm run dev
+📦 If You Fork This Repository
+
+If you clone or fork this project, you must configure your own services before uploads will work:
+
+Create a PostgreSQL database.
+Create an Amazon S3 bucket.
+Configure Cloudinary credentials.
+Create a RabbitMQ instance (CloudAMQP or local).
+Install FFmpeg on your machine or server.
+Add all required environment variables to .env.
+
+Without these services, video upload and processing will not function.
 ---
 
 ## Comments
