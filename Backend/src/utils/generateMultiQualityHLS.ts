@@ -32,26 +32,19 @@ export const generateMultiQualityHLS = async (
     recursive: true,
   });
 
-  const qualities = [
-    {
-      name: "360p",
-      resolution: "640x360",
-      bitrate: "800k",
-    },
+ const qualities = [
+  {
+    name: "360p",
+    resolution: "640x360",
+    bitrate: "800k",
+  },
 
-    {
-      name: "720p",
-      resolution: "1280x720",
-      bitrate: "2800k",
-    },
-
-    {
-      name: "1080p",
-      resolution: "1920x1080",
-      bitrate: "5000k",
-    },
-  ];
-
+  {
+    name: "720p",
+    resolution: "1280x720",
+    bitrate: "2800k",
+  },
+];
   for (const quality of qualities) {
 
     const qualityFolder = path.join(
