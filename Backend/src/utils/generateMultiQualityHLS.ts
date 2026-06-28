@@ -79,11 +79,7 @@ export const generateMultiQualityHLS = async (
 
 #EXT-X-STREAM-INF:BANDWIDTH=2800000,RESOLUTION=1280x720
 720p/index.m3u8
-
-#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080
-1080p/index.m3u8
 `;
-
   fs.writeFileSync(
     path.join(outputFolder, "master.m3u8"),
     masterPlaylist,
