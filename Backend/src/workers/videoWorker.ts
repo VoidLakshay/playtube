@@ -1,99 +1,142 @@
 import fs from "fs";
 import path from "path";
-import { generateSprite } from "../utils/generateSprite.js";
+
 import prisma from "../lib/prisma.js";
 
-import { generateMultiQualityHLS } from "../utils/generateMultiQualityHLS.js";
-import { getVideoDuration } from "../utils/getVideoDuration.js";
+import { downloadVideoFromS3 } from "../utils/downloadVideoFromS3.js";
 import { transcodeVideo } from "../utils/transcodeVideo.js";
+import { generateMultiQualityHLS } from "../utils/generateMultiQualityHLS.js";
+import { generateSprite } from "../utils/generateSprite.js";
+import { getVideoDuration } from "../utils/getVideoDuration.js";
+
+import { uploadHLSFolderToS3 } from "../utils/uploadHLSFolderToS3.js";
+import { uploadSpriteToS3 } from "../utils/uploadSpriteToS3.js";
 
 export const processVideo = async (
   videoId: string,
-  videoPath: string,
+  s3Key: string,
 ) => {
-  console.log("VIDEO PATH RECEIVED:", videoPath);
-  console.log(
-  "EXISTS:",
-  fs.existsSync(videoPath)
-);
+
+  const tempFolder = path.join(
+    "temp",
+    videoId,
+  );
+
+  fs.mkdirSync(tempFolder, {
+    recursive: true,
+  });
+
   try {
 
     console.log(
-      "PROCESSING VIDEO:",
+      "===================================",
+    );
+
+    console.log(
+      "VIDEO PROCESS STARTED",
+    );
+
+    console.log(
+      "VIDEO ID:",
       videoId,
     );
 
-    const absoluteVideoPath =
-      videoPath
-
     console.log(
-      "VIDEO PATH:",
-      videoPath,
+      "S3 KEY:",
+      s3Key,
     );
 
-    console.log(
-      "ABSOLUTE PATH:",
-      absoluteVideoPath,
-    );
+    const extension =
+      path.extname(s3Key);
 
-    console.log(
-      "FILE EXISTS:",
-      fs.existsSync(
-        absoluteVideoPath,
-      ),
-    );
+    const originalVideo =
+      path.join(
+        tempFolder,
+        `original${extension}`,
+      );
 
-    const transcodedPath =
-      `uploads/transcoded-${Date.now()}.mp4`;
-
-    await transcodeVideo(
-      absoluteVideoPath,
-      transcodedPath,
-    );
+    const transcodedVideo =
+      path.join(
+        tempFolder,
+        "transcoded.mp4",
+      );
 
     const hlsFolder =
-      `uploads/hls-${Date.now()}`;
+      path.join(
+        tempFolder,
+        "hls",
+      );
+
+    const spritePath =
+      path.join(
+        tempFolder,
+        "sprite.jpg",
+      );
+
+    console.log(
+      "Downloading Original Video...",
+    );
+
+    await downloadVideoFromS3(
+      s3Key,
+      originalVideo,
+    );
+
+    console.log(
+      "Original Downloaded",
+    );
+
+    await transcodeVideo(
+      originalVideo,
+      transcodedVideo,
+    );
+
+    console.log(
+      "Transcoding Completed",
+    );
 
     await generateMultiQualityHLS(
-      transcodedPath,
+      transcodedVideo,
       hlsFolder,
     );
+
     console.log(
-  "MASTER EXISTS:",
-  fs.existsSync(path.join(hlsFolder, "master.m3u8"))
-);
+      "HLS Generated",
+    );
 
-console.log(
-  "HLS ROOT FILES:",
-  fs.readdirSync(hlsFolder)
-);
+    await generateSprite(
+      transcodedVideo,
+      spritePath,
+    );
 
-console.log(
-  "360 FILES:",
-  fs.readdirSync(path.join(hlsFolder, "360p"))
-);
-
-console.log(
-  "720 FILES:",
-  fs.readdirSync(path.join(hlsFolder, "720p"))
-);
-
-console.log(
-  "1080 FILES:",
-  fs.readdirSync(path.join(hlsFolder, "1080p"))
-);
-    const spritePath =
-  `uploads/sprite-${Date.now()}.jpg`;
-
-await generateSprite(
-  transcodedPath,
-  spritePath,
-);
+    console.log(
+      "Sprite Generated",
+    );
 
     const duration =
       await getVideoDuration(
-        transcodedPath,
+        transcodedVideo,
       );
+
+    const hlsPrefix =
+      `videos/hls/${videoId}`;
+
+    await uploadHLSFolderToS3(
+      hlsFolder,
+      hlsPrefix,
+    );
+        const sprite =
+      await uploadSpriteToS3(
+        spritePath,
+        videoId,
+      );
+
+    console.log(
+      "Sprite Uploaded",
+    );
+
+    const hlsUrl =
+      `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${hlsPrefix}/master.m3u8`;
 
     await prisma.video.update({
       where: {
@@ -101,30 +144,64 @@ await generateSprite(
       },
 
       data: {
-  duration,
+        duration,
 
-  hlsUrl:
-    `${hlsFolder}/master.m3u8`,
+        hlsUrl,
 
-  spriteUrl:
-    spritePath,
+        spriteUrl:
+          sprite.url,
 
-  transcodingStatus:
-    "completed",
-}
+        transcodingStatus:
+          "completed",
+      },
     });
 
     console.log(
-      "VIDEO PROCESSING COMPLETED:",
-      videoId,
+      "DATABASE UPDATED",
+    );
+
+    fs.rmSync(
+      tempFolder,
+      {
+        recursive: true,
+        force: true,
+      },
+    );
+
+    console.log(
+      "TEMP FILES DELETED",
+    );
+
+    console.log(
+      "VIDEO PROCESS COMPLETED",
+    );
+
+    console.log(
+      "===================================",
     );
 
   } catch (error) {
 
     console.error(
-      "VIDEO PROCESSING FAILED:",
+      "VIDEO PROCESS FAILED:",
       error,
     );
+
+    if (
+      fs.existsSync(
+        tempFolder,
+      )
+    ) {
+
+      fs.rmSync(
+        tempFolder,
+        {
+          recursive: true,
+          force: true,
+        },
+      );
+
+    }
 
     await prisma.video.update({
       where: {
@@ -138,4 +215,5 @@ await generateSprite(
     });
 
   }
+
 };

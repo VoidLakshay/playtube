@@ -2,5 +2,8 @@ node_modules
 .env
 /generated/prisma
 
-uploads/
-public/
+public/*
+!public/.gitkeep
+
+uploads/*
+!uploads/.gitkeep

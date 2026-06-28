@@ -1,23 +1,19 @@
 import fs from "fs";
-import path from "path";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../config/s3.js";
 
-export async function uploadVideoToS3(
-  filePath: string,
+export async function uploadSpriteToS3(
+  spritePath: string,
   videoId: string,
-  mimeType: string,
 ) {
-  const extension = path.extname(filePath);
-
-  const key = `videos/originals/${videoId}${extension}`;
+  const key = `videos/sprites/${videoId}.jpg`;
 
   await s3.send(
     new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
       Key: key,
-      Body: fs.createReadStream(filePath),
-      ContentType: mimeType,
+      Body: fs.createReadStream(spritePath),
+      ContentType: "image/jpeg",
     }),
   );
 

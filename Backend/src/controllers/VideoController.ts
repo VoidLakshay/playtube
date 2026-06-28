@@ -7,7 +7,7 @@ import uploadOnCloudinary from "../config/cloudinary.js";
 import type { AuthRequest } from "../middleware/isAuth.js";
 
 import { sendVideoJob } from "../queue/producer.js";
-
+import { uploadVideoToS3 } from "../utils/uploadVideoToS3.js";
 // ======================================================
 // UPLOAD VIDEO / SHORT
 // ======================================================
@@ -103,7 +103,7 @@ console.log(
       data: {
         title,
         description,
-        videoUrl: null, // we'll set this after cloudinary upload from worker
+videoUrl: null, // will be updated after S3 upload
         thumbnailUrl: uploadedThumbnail,
         duration: 0,
         hlsUrl: null,
@@ -114,15 +114,35 @@ console.log(
       },
     });
 
-    const absoluteVideoPath = path.resolve(files.video[0].path);
+  const uploadedVideo = await uploadVideoToS3(
+  files.video[0].path,
+  video.id,
+  files.video[0].mimetype,
+);
 
-    await sendVideoJob({
-      videoId: video.id,
-      videoPath: absoluteVideoPath,
-    });
+// Delete local temp file
+if (fs.existsSync(files.video[0].path)) {
+    fs.unlinkSync(files.video[0].path);
+}
 
-    console.log("VIDEO JOB SENT:", video.id);
+// Save Original Video URL
+await prisma.video.update({
+  where: {
+    id: video.id,
+  },
 
+  data: {
+    videoUrl: uploadedVideo.url,
+  },
+});
+
+// Send only S3 Key to RabbitMQ
+await sendVideoJob({
+  videoId: video.id,
+  s3Key: uploadedVideo.key,
+});
+
+console.log("VIDEO JOB SENT:", uploadedVideo.key);
     // ======================================================
     // INCREMENT VIDEO COUNT
     // ======================================================

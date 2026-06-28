@@ -2,8 +2,13 @@ import { getChannel } from "./rabbitmq.js";
 
 const QUEUE_NAME = "video-processing";
 
+interface VideoJob {
+  videoId: string;
+  s3Key: string;
+}
+
 export const sendVideoJob = async (
-  data: any,
+  data: VideoJob,
 ) => {
   const channel = getChannel();
 
@@ -16,12 +21,11 @@ export const sendVideoJob = async (
 
   channel.sendToQueue(
     QUEUE_NAME,
-    Buffer.from(
-      JSON.stringify(data),
-    ),
+    Buffer.from(JSON.stringify(data)),
+    {
+      persistent: true,
+    },
   );
 
-  console.log(
-    "JOB SENT TO QUEUE",
-  );
+  console.log("JOB SENT:", data);
 };
