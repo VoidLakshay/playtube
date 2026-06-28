@@ -381,21 +381,6 @@ VITE_API_URL=
 
 ---
 
-# 📷 Screenshots
-
-* Home Page
-* Watch Page
-* Channel Page
-* Dashboard
-* Upload Video
-* Playlist
-* Watch Later
-* Authentication
-
-(Add screenshots here)
-
----
-
 # 👨‍💻 Author
 
 **Lakshay Vashisth**
