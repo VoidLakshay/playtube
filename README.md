@@ -67,6 +67,8 @@ A full-stack YouTube-inspired video streaming platform built with a modern produ
 * Search Videos
 * View Counter
 * Like Counter
+
+
 ⚠️ Deployment Notes
 
 This project uses FFmpeg, RabbitMQ, Amazon S3, and background workers to process uploaded videos.
